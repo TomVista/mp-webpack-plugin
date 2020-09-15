@@ -20,7 +20,7 @@ const appWxssTmpl = fs.readFileSync(path.resolve(__dirname, './tmpl/app.tmpl.wxs
 const customComponentJsTmpl = fs.readFileSync(path.resolve(__dirname, './tmpl/custom-component.tmpl.js'), 'utf8')
 const projectConfigJsonTmpl = require('./tmpl/project.config.tmpl.json')
 const packageConfigJsonTmpl = require('./tmpl/package.tmpl.json')
-
+console.log(123)
 process.env.isMiniprogram = true // 设置环境变量
 const globalVars = [
   'HTMLElement',
@@ -106,7 +106,7 @@ class MpPlugin {
       const appJsEntryName = generateConfig.appEntry || generateConfig.app || '' // 取 app 是为了兼容旧版本的一个 bug
       const globalConfig = options.global || {}
       const pageConfigMap = options.pages || {}
-      const subpackagesConfig = generateConfig.subpackages || {}
+      const subpackagesConfig = generateConfig.subpackages || []
       const preloadRuleConfig = generateConfig.preloadRule || {}
       const tabBarConfig = generateConfig.tabBar || {}
       const wxCustomComponentConfig = generateConfig.wxCustomComponent || {}
@@ -154,10 +154,9 @@ class MpPlugin {
       }
 
       // 处理分包配置
-      Object.keys(subpackagesConfig).forEach(subpackageItem => {
-        packageName = subpackageItem.root
+      subpackagesConfig.forEach(subpackageItem => {
+        var packageName = subpackageItem.root
         const pages = subpackageItem.pages || []
-
         pages.forEach(entryName => {
           subpackagesMap[entryName] = packageName
 
@@ -311,8 +310,14 @@ class MpPlugin {
         // app json
         const subpackages = []
         const preloadRule = {}
-        Object.keys(subpackagesConfig).forEach(subpackageItem => {
+        subpackagesConfig.forEach(subpackageItem => {
           const pages = subpackageItem.pages || []
+          console.log({
+            name: subpackageItem.root,
+            root: subpackageItem.root,
+            pages: pages.map(entryName => `pages/${entryName}/index`),
+            plugins: subpackageItem.plugins || {}
+          })
           subpackages.push({
             name: subpackageItem.root,
             root: subpackageItem.root,
@@ -427,7 +432,7 @@ class MpPlugin {
         optimization: options.optimization || {},
       }, null, '\t')
       if (needEmitConfigToSubpackage) {
-        Object.keys(subpackagesConfig).forEach(subpackageItem => {
+        subpackagesConfig.forEach(subpackageItem => {
           addFile(compilation, `../${subpackageItem.root}/config.js`, configJsContent)
         })
       } else {
